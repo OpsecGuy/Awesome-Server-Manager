@@ -132,9 +132,8 @@ def start_threads():
         client = paramiko.SSHClient()
         client.load_system_host_keys()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        i = get_server(srv)[0]
-        l = get_server(srv)[1]
-        p = get_server(srv)[2]
+        i, l, p = get_server(srv)
+        
         if mode == 1:
             threading.Thread(target=is_up, name=i, args=[i, l, p]).start()
             time.sleep(0.5)
