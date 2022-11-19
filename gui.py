@@ -16,7 +16,7 @@ class Window():
         
         with dpg.window(label='Window', height=400, width=400, no_title_bar=True, no_bring_to_front_on_focus=True):
             dpg.add_text(default_value='Servers List')
-            dpg.add_listbox(items=list(self.cfg.get_servers()), tag='servers_list', width=200)
+            dpg.add_listbox(items=list(self.cfg.get_servers()), tag='servers_list', num_items=8, width=200)
             with dpg.group(horizontal=True):
                 dpg.add_button(label='Refresh', tag='b_refresh', callback=lambda: dpg.set_value('servers_list', (self.cfg.get_servers())))
                 dpg.add_button(label='Connect', tag='b_connect', callback=self.connect)
@@ -45,7 +45,6 @@ class Window():
                 dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
                 dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
                 dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
-                
 
             except (FileNotFoundError, PermissionError):
                 print(f'Could not find {self.cfg.config_file}! New config has been created.')
@@ -73,6 +72,7 @@ class Window():
         dpg.show_item('username')
         dpg.show_item('password')
 
+
     def get_file(self) -> str:
         try:
             input = dpg.get_value('i_commands')
@@ -83,6 +83,7 @@ class Window():
         except Exception as err:
             print(err)
             
+            
     def is_valid(self):
         if dpg.get_value('servers_list') == 'None':
             dpg.set_value('status', f'Chose correct server!')
@@ -90,29 +91,28 @@ class Window():
         else:
             return True
     
+    
     def parse_command(self):
         buffer = ''
         dpg.set_value('status', f'Trying to open a file.')
         with open(self.get_file(), 'r', encoding='utf-8') as file:
             for line in file.readlines():
-                if line is not '\n':
+                if line != '\n':
                     escaped = ''.join(line.replace('\n', ' && '))
                     buffer = buffer + escaped
         return buffer
-                
+
+
     def connect(self) -> None:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            if dpg.get_value('servers_list') == 'None':
-                dpg.set_value('status', f'Server "None" can not be used!')
-                return
-                
-            dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
-            client.connect(hostname=dpg.get_value('ip'), port=22, username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=5.0)
-            dpg.set_value('status', f'Connection Established.')
-            client.close()
-            dpg.set_value('status', f'Connected Successfully.')
+            if self.is_valid():
+                dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
+                client.connect(hostname=dpg.get_value('ip'), port=22, username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=5.0)
+                dpg.set_value('status', f'Connection Established.')
+                client.close()
+                dpg.set_value('status', f'Connected Successfully.')
         except Exception:
             dpg.set_value('status', f'An Error Occurred!')
 
@@ -128,12 +128,13 @@ class Window():
                 with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
                     dpg.set_value('status', f'Executing Commands...')
                     stdin, stdout, stderr = client.exec_command(self.parse_command())
+                    
                     for output in iter(stdout.readline, ''):
                         log_file.writelines(output)
-                
-            # client.close()
+                        
+            client.close()
             dpg.set_value('status', f'Task Finished!')
                 
         except Exception as err:
-            print(err)
+            pass
         
