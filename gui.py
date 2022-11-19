@@ -27,15 +27,14 @@ class Window():
                 dpg.add_text(label='Username', tag='username')
                 dpg.add_text(label='Password', tag='password')
             
-            dpg.add_text('Status: Waiting...', tag='status', color=(0, 255, 0))
-            dpg.add_input_text(label='Commands File', width=200 ,tag='commands')
+            dpg.add_input_text(label='File Name', default_value='commands', width=200 ,tag='commands')
             with dpg.group(horizontal=True):
                 dpg.add_button(label='Confirm', tag='confirmed_cmd', callback=self.get_commands_file)
                 dpg.add_button(label='Clear', tag='purge', callback=lambda: dpg.set_value('commands', ''))
                 dpg.add_radio_button(['.txt', '.json'], label='extension', tag='extension', default_value='.txt', horizontal=True)
             dpg.add_separator()
+            dpg.add_text('Status: Waiting...', tag='status', color=(0, 255, 0))
             
-    
     def update(self):
         while True:
             try:
@@ -49,7 +48,7 @@ class Window():
             except (FileNotFoundError, PermissionError):
                 print(f'Could not find {self.cfg.config_file}! New config has been created.')
                 self.cfg.create_example()
-            time.sleep(0.001)
+            time.sleep(0.01)
 
 
     def run(self) -> None:
@@ -77,6 +76,10 @@ class Window():
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
+            if dpg.get_value('servers_list') == 'None':
+                dpg.set_value('status', f'Server "None" can not be used!')
+                return
+                
             dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
             client.connect(hostname=dpg.get_value('ip'), port=22, username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=5.0)
             dpg.set_value('status', f'Connection Established.')
@@ -88,7 +91,11 @@ class Window():
 
     def execute_cmd(self) -> None:
         try:
-            with open(self.input_file, 'r', encoding='utf-8') as file:
+            if dpg.get_value('servers_list') == 'None':
+                dpg.set_value('status', f'Server "None" can not be used!')
+                return
+                
+            with open(str(self.input_file), 'r', encoding='utf-8') as file:
                 for line in file.readlines():
                     c = ''.join(line.replace('\n', ' && '))
                     print(c)
