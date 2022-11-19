@@ -7,6 +7,12 @@ example_config = {
         'username': 'root',
         'password': 'pswd',
     },
+    'test_server2': {
+        'IP': '1.1.1.2',
+        'port': '22',
+        'username': 'root',
+        'password': 'pswd',
+    },
 }
 
 class Config():

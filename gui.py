@@ -1,10 +1,9 @@
 import dearpygui.dearpygui as dpg
-import config, time, paramiko, re
+import config, time, paramiko, os
 
 class Window():
     def __init__(self) -> None:
         self.cfg = config.Config()
-        self.input_file = None
         print('Window initialization started.')
 
     def callback(self, sender, data):
@@ -23,15 +22,19 @@ class Window():
                 dpg.add_button(label='Execute', tag='b_execute', callback=self.execute_cmd)
 
             with dpg.group(horizontal=True):
-                dpg.add_text(label='IP', tag='ip')
-                dpg.add_text(label='Username', tag='username')
-                dpg.add_text(label='Password', tag='password')
-            
-            dpg.add_input_text(label='File Name', default_value='commands', width=200 ,tag='commands')
+                dpg.add_text(label='IP', tag='ip', show=False, color=(255, 100, 0))
+                dpg.add_text(label='Username', tag='username', show=False, color=(255, 0, 0))
+                dpg.add_text(label='Password', tag='password', show=False, color=(255, 0, 100))
+                
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Confirm', tag='confirmed_cmd', callback=self.get_commands_file)
-                dpg.add_button(label='Clear', tag='purge', callback=lambda: dpg.set_value('commands', ''))
-                dpg.add_radio_button(['.txt', '.json'], label='extension', tag='extension', default_value='.txt', horizontal=True)
+                dpg.add_button(label='Show', tag='b_unsafe', callback=self.show_context)
+                dpg.add_button(label='Hide', tag='b_safe', callback=self.hide_context)
+            
+            dpg.add_input_text(label='File Name', default_value='commands', width=200 ,tag='i_commands')
+            with dpg.group(horizontal=True):
+                dpg.add_button(label='Save', tag='b_confirmed_cmd', callback=self.get_file)
+                dpg.add_button(label='Clear', tag='b_purge', callback=lambda: dpg.set_value('i_commands', ''))
+                dpg.add_radio_button(['.txt', '.json'], label='extension', tag='rb_extension', default_value='.txt', horizontal=True)
             dpg.add_separator()
             dpg.add_text('Status: Waiting...', tag='status', color=(0, 255, 0))
             
@@ -42,9 +45,7 @@ class Window():
                 dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
                 dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
                 
-                if dpg.get_value('confirmed_cmd') != None:
-                    print(dpg.get_value('confirmed_cmd'))
-            
+
             except (FileNotFoundError, PermissionError):
                 print(f'Could not find {self.cfg.config_file}! New config has been created.')
                 self.cfg.create_example()
@@ -61,17 +62,42 @@ class Window():
     def destroy(self) -> None:
         dpg.destroy_context()
 
-
-    def get_commands_file(self):
-        input_file = dpg.get_value('commands')
-        extension_file = dpg.get_value('extension')
-        if input_file != '':
-            commands_file = input_file + extension_file
-            self.input_file = commands_file
-        else:
-            print('Chose correct file with commands to execute!')
+    def hide_context(self):
+        dpg.hide_item('ip')
+        dpg.hide_item('username')
+        dpg.hide_item('password') 
         
+    def show_context(self):
+        dpg.show_item('ip')
+        dpg.show_item('username')
+        dpg.show_item('password')
 
+    def get_file(self) -> str:
+        try:
+            input = dpg.get_value('i_commands')
+            extension_file = dpg.get_value('rb_extension')
+            if input != '':
+                path = f"{os.getcwd()} + '\\' + {input + extension_file}"
+                return input + extension_file
+        except Exception as err:
+            print(err)
+            
+    def is_valid(self):
+        if dpg.get_value('servers_list') == 'None':
+            dpg.set_value('status', f'Chose correct server!')
+            return False
+        else:
+            return True
+    
+    def parse_command(self):
+        dpg.set_value('status', f'Trying to open a file.')
+        with open(self.get_file(), 'r', encoding='utf-8') as file:
+            for line in file.readlines():
+                if line is not '\n':
+                    escaped = ''.join(line.replace('\n', ' && '))
+                    buffer = buffer + escaped
+        return buffer
+                
     def connect(self) -> None:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -91,14 +117,12 @@ class Window():
 
     def execute_cmd(self) -> None:
         try:
-            if dpg.get_value('servers_list') == 'None':
-                dpg.set_value('status', f'Server "None" can not be used!')
-                return
+            buffer = ''
+            if self.is_valid():
+                dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
+                dpg.set_value('status', f'Processing..')
+                self.parse_command()
                 
-            with open(str(self.input_file), 'r', encoding='utf-8') as file:
-                for line in file.readlines():
-                    c = ''.join(line.replace('\n', ' && '))
-                    print(c)
-
         except Exception as err:
             print(err)
+        
