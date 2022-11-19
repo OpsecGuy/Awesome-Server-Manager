@@ -1,4 +1,5 @@
 import dearpygui.dearpygui as dpg
+from sys import stderr, stdin, stdout
 import config, time, paramiko, os
 
 class Window():
@@ -90,6 +91,7 @@ class Window():
             return True
     
     def parse_command(self):
+        buffer = ''
         dpg.set_value('status', f'Trying to open a file.')
         with open(self.get_file(), 'r', encoding='utf-8') as file:
             for line in file.readlines():
@@ -117,11 +119,20 @@ class Window():
 
     def execute_cmd(self) -> None:
         try:
-            buffer = ''
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             if self.is_valid():
                 dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
-                dpg.set_value('status', f'Processing..')
-                self.parse_command()
+                client.connect(hostname=dpg.get_value('ip'), port=22, username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=5.0)
+                
+                with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
+                    dpg.set_value('status', f'Executing Commands...')
+                    stdin, stdout, stderr = client.exec_command(self.parse_command())
+                    for output in iter(stdout.readline, ''):
+                        log_file.writelines(output)
+                
+            # client.close()
+            dpg.set_value('status', f'Task Finished!')
                 
         except Exception as err:
             print(err)
