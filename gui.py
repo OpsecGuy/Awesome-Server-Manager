@@ -3,8 +3,9 @@ import time
 import os
 import webbrowser
 from sys import stderr, stdin, stdout
-import paramiko
 import dearpygui.dearpygui as dpg
+import paramiko
+import requests
 import config
 
 class Window():
@@ -15,7 +16,7 @@ class Window():
         Window initialization
         """
         self.cfg = config.Config()
-        self.__version__ = '1.0.1.2'
+        self.__version__ = '1.0.1.3'
         print('Window initialization started.')
 
     def callback(self, sender, data):
@@ -63,8 +64,7 @@ class Window():
                 dpg.add_radio_button(['.txt', '.json'], label='extension', tag='rb_extension', default_value='.txt', horizontal=True)
             dpg.add_separator()
             dpg.add_text('Status: Waiting...', tag='status', color=(0, 255, 0))
-
-            dpg.add_button(label='Check for updates', pos=(8, 335), callback=lambda: webbrowser.open('https://github.com/OpsecGuy/Awesome-Server-Manager'))
+            dpg.add_button(label='Update', tag='b_update', show=False, pos=(8, 335), callback=lambda: webbrowser.open('https://github.com/OpsecGuy/Awesome-Server-Manager'))
 
     def update(self) -> None:
         """
@@ -72,14 +72,17 @@ class Window():
         """
         while True:
             try:
-                dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
-                dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
-                dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
-
                 if os.path.exists(self.cfg.config_path) is False:
                     dpg.set_value('status', f'Servers list could not be found!\nCreating new {self.cfg.config_file}')
                     self.cfg.create_example()
 
+                dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
+                dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
+                dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
+
+                if self.get_current_version() != self.__version__:
+                    dpg.configure_item('b_update', show=True)
+            
             except Exception as err:
                 print(err)
             time.sleep(0.01)
@@ -181,6 +184,15 @@ class Window():
                     escaped = ''.join(line.replace('\n', ' && '))
                     buffer = buffer + escaped
         return buffer
+
+    def get_current_version(self):
+        """Grabs version data from GitHub page.\n
+        Visit Github for the newest versions.
+
+        Returns:
+            str: current version
+        """
+        return requests.get('https://raw.githubusercontent.com/OpsecGuy/Awesome-Server-Manager/main/version').text.replace('\n', '')
 
     def connect(self) -> None:
         """
