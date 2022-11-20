@@ -1,4 +1,1 @@
 whoami
-apt update
-apt upgrade -y
-apt --help
