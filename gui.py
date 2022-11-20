@@ -15,6 +15,7 @@ class Window():
         Window initialization
         """
         self.cfg = config.Config()
+        self.__version__ = '1.0.1.1'
         print('Window initialization started.')
 
     def callback(self, sender, data):
@@ -84,7 +85,7 @@ class Window():
         Execute/Start window thread.
         """
         dpg.create_viewport(
-            title='Awesome Server Manager 1.0.1', \
+            title=f'Awesome Server Manager {self.__version__}', \
             height=400,                         \
             width=400,                          \
             max_width=400,                      \
@@ -96,7 +97,7 @@ class Window():
         dpg.show_viewport()
         dpg.start_dearpygui()
 
-    def destroy() -> None:
+    def destroy(self) -> None:
         """
         Destroys window context.
         """
