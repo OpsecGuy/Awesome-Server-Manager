@@ -1,6 +1,6 @@
 import dearpygui.dearpygui as dpg
 from sys import stderr, stdin, stdout
-import config, time, paramiko, os
+import config, time, paramiko, os, webbrowser
 
 class Window():
     def __init__(self) -> None:
@@ -33,11 +33,12 @@ class Window():
             dpg.add_separator()
             dpg.add_input_text(label='Commands File', default_value='commands', width=200 ,tag='i_commands')
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Load', tag='b_confirmed_cmd', callback=self.get_input_file)
                 dpg.add_button(label='Clear', tag='b_purge', callback=lambda: dpg.set_value('i_commands', ''))
                 dpg.add_radio_button(['.txt', '.json'], label='extension', tag='rb_extension', default_value='.txt', horizontal=True)
             dpg.add_separator()
             dpg.add_text('Status: Waiting...', tag='status', color=(0, 255, 0))
+            
+            dpg.add_button(label='Check for updates', pos=(8, 335), callback=lambda: webbrowser.open('https://github.com/OpsecGuy/Awesome-Server-Manager'))
 
     def update(self) -> None:
         while True:
@@ -93,8 +94,7 @@ class Window():
         
         if stage == 1:
             dpg.set_value('status', 'Parsing commands...')
-            if len(self.parse_command()) <= 1:
-                dpg.set_value('status', f'Error while reading file!')
+            if self.get_input_file() == None:
                 return False
             else:
                 return True
@@ -116,7 +116,7 @@ class Window():
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         dpg.set_value('status', f'[CMD] Connecting to {dpg.get_value("ip")}')
         try:
-            if self.is_valid(2):
+            if self.is_valid(stage=2):
                 client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
                 client.close()
                 dpg.set_value('status', f'[CONNECT] Task Finished!')
@@ -129,7 +129,7 @@ class Window():
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             dpg.set_value('status', f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
-            if self.is_valid(1):
+            if self.is_valid(stage=1):
                 client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
 
                 with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
