@@ -14,13 +14,13 @@ class Window():
     def create(self) -> None:
         dpg.create_context()
         
-        with dpg.window(label='Window', height=400, width=400, no_title_bar=True, no_bring_to_front_on_focus=True, no_resize=True):
-            dpg.add_text(default_value='Servers List')
-            
-            with dpg.group(horizontal=True):
+        with dpg.window(label='Window', height=400, width=400, no_title_bar=True, no_bring_to_front_on_focus=True, no_resize=True, no_move=True):
+            with dpg.group(horizontal=True, tag='servers_place'):
                 dpg.add_listbox(items=list(self.cfg.get_servers()), tag='servers_list', num_items=8, width=200)
-                dpg.add_button(label='Reload', tag='b_reload', callback=lambda: dpg.set_value('servers_list', list(self.cfg.get_servers())))
-                dpg.add_button(label='Connect', tag='b_connect', callback=self.connect)
+            
+            with dpg.group(horizontal=True, before='servers_place'):
+                dpg.add_button(label='Reload', tag='b_reload', callback=lambda: dpg.configure_item('servers_list', items=self.cfg.get_servers()))
+                dpg.add_button(label='Connect', tag='b_connect', callback=self.connect) 
                 dpg.add_button(label='Execute', tag='b_execute', callback=self.execute_cmd)
             
             with dpg.group(horizontal=True):
@@ -31,9 +31,8 @@ class Window():
                 dpg.add_text(label='IP', tag='ip', show=False, color=(255, 100, 0))
                 dpg.add_text(label='Username', tag='username', show=False, color=(255, 0, 0))
                 dpg.add_text(label='Password', tag='password', show=False, color=(255, 0, 100))
-                
-           
             
+            dpg.add_separator()
             dpg.add_input_text(label='Commands File', default_value='commands', width=200 ,tag='i_commands')
             with dpg.group(horizontal=True):
                 dpg.add_button(label='Load', tag='b_confirmed_cmd', callback=self.get_file)
@@ -56,7 +55,7 @@ class Window():
 
 
     def run(self) -> None:
-        dpg.create_viewport(title='Awesome Server Manager 1.0', height=400, width=400, resizable=False)
+        dpg.create_viewport(title='Awesome Server Manager 1.0', height=400, width=400, max_width=400, max_height=400, resizable=False, vsync=True)
         dpg.setup_dearpygui()
         dpg.show_viewport()
         dpg.start_dearpygui()

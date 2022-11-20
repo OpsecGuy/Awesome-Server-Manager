@@ -36,12 +36,16 @@ class Config():
     def load_config(self):
         with open(self.config_file, 'r') as file:
             file.flush()
-            return json.load(file)
+            json_buffer = json.load(file)
+            file.close()
+            return json_buffer
 
 
     def get_servers(self):
         file = self.load_config()
-        servers = [None]
+        servers = []
+        servers.clear()
+        servers.append(None)
         for i in file:
             servers.append(i)
         return servers
