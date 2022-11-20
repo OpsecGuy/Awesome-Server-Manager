@@ -14,7 +14,7 @@ class Window():
     def create(self) -> None:
         dpg.create_context()
         
-        with dpg.window(label='Window', height=400, width=400, no_title_bar=True, no_bring_to_front_on_focus=True):
+        with dpg.window(label='Window', height=400, width=400, no_title_bar=True, no_bring_to_front_on_focus=True, no_resize=True):
             dpg.add_text(default_value='Servers List')
             dpg.add_listbox(items=list(self.cfg.get_servers()), tag='servers_list', num_items=8, width=200)
             with dpg.group(horizontal=True):
@@ -53,7 +53,7 @@ class Window():
 
 
     def run(self) -> None:
-        dpg.create_viewport(title='Awesome Server Manager 1.0', height=400, width=400)
+        dpg.create_viewport(title='Awesome Server Manager 1.0', height=400, width=400, resizable=False)
         dpg.setup_dearpygui()
         dpg.show_viewport()
         dpg.start_dearpygui()
@@ -96,6 +96,7 @@ class Window():
         buffer = ''
         dpg.set_value('status', f'Trying to open a file.')
         with open(self.get_file(), 'r', encoding='utf-8') as file:
+            dpg.set_value('status', f'Parsing commands...')
             for line in file.readlines():
                 if line != '\n':
                     escaped = ''.join(line.replace('\n', ' && '))
@@ -113,8 +114,8 @@ class Window():
                 dpg.set_value('status', f'Connection Established.')
                 client.close()
                 dpg.set_value('status', f'Connected Successfully.')
-        except Exception:
-            dpg.set_value('status', f'An Error Occurred!')
+        except Exception as err:
+            dpg.set_value('status', f'An Error Occurred!\n{err}')
 
 
     def execute_cmd(self) -> None:
@@ -136,5 +137,5 @@ class Window():
             dpg.set_value('status', f'Task Finished!')
                 
         except Exception as err:
-            pass
+            dpg.set_value('status', f'An Error Occurred!\n{err}')
         
