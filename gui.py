@@ -114,7 +114,7 @@ class Window():
     def connect(self) -> None:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        dpg.set_value('status', f'[CMD] Connecting to {dpg.get_value("ip")}')
+        dpg.set_value('status', f'[CONNECT] Connecting to {dpg.get_value("ip")}')
         try:
             if self.is_valid(stage=2):
                 client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
