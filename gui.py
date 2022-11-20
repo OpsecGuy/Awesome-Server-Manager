@@ -16,24 +16,27 @@ class Window():
         
         with dpg.window(label='Window', height=400, width=400, no_title_bar=True, no_bring_to_front_on_focus=True, no_resize=True):
             dpg.add_text(default_value='Servers List')
-            dpg.add_listbox(items=list(self.cfg.get_servers()), tag='servers_list', num_items=8, width=200)
+            
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Refresh', tag='b_refresh', callback=lambda: dpg.set_value('servers_list', (self.cfg.get_servers())))
+                dpg.add_listbox(items=list(self.cfg.get_servers()), tag='servers_list', num_items=8, width=200)
+                dpg.add_button(label='Reload', tag='b_reload', callback=lambda: dpg.set_value('servers_list', list(self.cfg.get_servers())))
                 dpg.add_button(label='Connect', tag='b_connect', callback=self.connect)
                 dpg.add_button(label='Execute', tag='b_execute', callback=self.execute_cmd)
-
+            
+            with dpg.group(horizontal=True):
+                dpg.add_button(label='Show Info', tag='b_unsafe', callback=self.show_context)
+                dpg.add_button(label='Hide Info', tag='b_safe', callback=self.hide_context)
+            
             with dpg.group(horizontal=True):
                 dpg.add_text(label='IP', tag='ip', show=False, color=(255, 100, 0))
                 dpg.add_text(label='Username', tag='username', show=False, color=(255, 0, 0))
                 dpg.add_text(label='Password', tag='password', show=False, color=(255, 0, 100))
                 
-            with dpg.group(horizontal=True):
-                dpg.add_button(label='Show', tag='b_unsafe', callback=self.show_context)
-                dpg.add_button(label='Hide', tag='b_safe', callback=self.hide_context)
+           
             
-            dpg.add_input_text(label='File Name', default_value='commands', width=200 ,tag='i_commands')
+            dpg.add_input_text(label='Commands File', default_value='commands', width=200 ,tag='i_commands')
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Save', tag='b_confirmed_cmd', callback=self.get_file)
+                dpg.add_button(label='Load', tag='b_confirmed_cmd', callback=self.get_file)
                 dpg.add_button(label='Clear', tag='b_purge', callback=lambda: dpg.set_value('i_commands', ''))
                 dpg.add_radio_button(['.txt', '.json'], label='extension', tag='rb_extension', default_value='.txt', horizontal=True)
             dpg.add_separator()
@@ -62,11 +65,13 @@ class Window():
     def destroy(self) -> None:
         dpg.destroy_context()
 
+
     def hide_context(self):
         dpg.hide_item('ip')
         dpg.hide_item('username')
         dpg.hide_item('password') 
-        
+
+
     def show_context(self):
         dpg.show_item('ip')
         dpg.show_item('username')
@@ -78,10 +83,15 @@ class Window():
             input = dpg.get_value('i_commands')
             extension_file = dpg.get_value('rb_extension')
             if input != '':
-                path = f"{os.getcwd()} + '\\' + {input + extension_file}"
+                path = f"{os.getcwd()}\\{input + extension_file}"
+                open(path, 'r')
+                dpg.set_value('status', f'Sucessfully loaded {input+extension_file}')
                 return input + extension_file
+            else:
+                dpg.set_value('status', f'No file has been specified!')
+
         except Exception as err:
-            print(err)
+            dpg.set_value('status', f'Could not find {input + extension_file}\n{os.getcwd()}')
             
             
     def is_valid(self):
@@ -107,24 +117,24 @@ class Window():
     def connect(self) -> None:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
         try:
             if self.is_valid():
-                dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
-                client.connect(hostname=dpg.get_value('ip'), port=22, username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=5.0)
-                dpg.set_value('status', f'Connection Established.')
+                client.connect(hostname=dpg.get_value('ip'), port=22, username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
                 client.close()
-                dpg.set_value('status', f'Connected Successfully.')
+                dpg.set_value('status', f'[CONNECT] Task Finished!')
+                
         except Exception as err:
-            dpg.set_value('status', f'An Error Occurred!\n{err}')
+            dpg.set_value('status', f'[CONNECT] An Error Occurred!\nDETAILS:\n{err}')
 
 
     def execute_cmd(self) -> None:
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
             if self.is_valid():
-                dpg.set_value('status', f'Connecting to {dpg.get_value("ip")}')
-                client.connect(hostname=dpg.get_value('ip'), port=22, username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=5.0)
+                client.connect(hostname=dpg.get_value('ip'), port=22, username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
                 
                 with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
                     dpg.set_value('status', f'Executing Commands...')
@@ -132,10 +142,10 @@ class Window():
                     
                     for output in iter(stdout.readline, ''):
                         log_file.writelines(output)
-                        
-            client.close()
-            dpg.set_value('status', f'Task Finished!')
+                
+                client.close()
+                dpg.set_value('status', f'[CMD] Task Finished!')
                 
         except Exception as err:
-            dpg.set_value('status', f'An Error Occurred!\n{err}')
+            dpg.set_value('status', f'[CMD] An Error Occurred!\nDETAILS:\n{err}')
         

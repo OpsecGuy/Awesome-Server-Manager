@@ -35,6 +35,7 @@ class Config():
 
     def load_config(self):
         with open(self.config_file, 'r') as file:
+            file.flush()
             return json.load(file)
 
 
