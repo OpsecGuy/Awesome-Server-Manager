@@ -15,7 +15,7 @@ class Window():
         Window initialization
         """
         self.cfg = config.Config()
-        self.__version__ = '1.0.1.1'
+        self.__version__ = '1.0.1.2'
         print('Window initialization started.')
 
     def callback(self, sender, data):
@@ -41,7 +41,7 @@ class Window():
             no_move=True):
 
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Reload', tag='b_reload', callback=lambda: dpg.configure_item('servers_list', items=self.cfg.get_servers()))
+                dpg.add_button(label='Refresh', tag='b_refresh', callback=lambda: dpg.configure_item('servers_list', items=self.cfg.get_servers()))
                 dpg.add_button(label='Connect', tag='b_connect', callback=self.connect)
                 dpg.add_button(label='Execute', tag='b_execute', callback=self.execute_cmd)
             dpg.add_listbox(items=self.cfg.get_servers(), tag='servers_list', num_items=8, width=200)
@@ -57,6 +57,7 @@ class Window():
 
             dpg.add_separator()
             dpg.add_input_text(label='Commands File', default_value='commands', width=200 ,tag='i_commands')
+
             with dpg.group(horizontal=True):
                 dpg.add_button(label='Clear', tag='b_purge', callback=lambda: dpg.set_value('i_commands', ''))
                 dpg.add_radio_button(['.txt', '.json'], label='extension', tag='rb_extension', default_value='.txt', horizontal=True)
@@ -75,9 +76,12 @@ class Window():
                 dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
                 dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
 
-            except (FileNotFoundError, PermissionError):
-                print(f'Could not find {self.cfg.config_file}! New config has been created.')
-                self.cfg.create_example()
+                if os.path.exists(self.cfg.config_path) is False:
+                    dpg.set_value('status', f'Servers list could not be found!\nCreating new {self.cfg.config_file}')
+                    self.cfg.create_example()
+
+            except Exception as err:
+                print(err)
             time.sleep(0.01)
 
     def run(self) -> None:
