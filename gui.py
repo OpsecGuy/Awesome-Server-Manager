@@ -117,7 +117,12 @@ class Window():
         dpg.set_value('status', f'[CONNECT] Connecting to {dpg.get_value("ip")}')
         try:
             if self.is_valid(stage=2):
-                client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
+                try:
+                    client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
+                except Exception:
+                    dpg.set_value('status', f'[EXECUTE] Connection Failed!')
+                    return
+                
                 client.close()
                 dpg.set_value('status', f'[CONNECT] Task Finished!')
                 
@@ -130,8 +135,13 @@ class Window():
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             dpg.set_value('status', f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
             if self.is_valid(stage=1):
-                client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
 
+                try:
+                    client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
+                except Exception:
+                    dpg.set_value('status', f'[EXECUTE] Connection Failed!')
+                    return
+                
                 with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
                     stdin, stdout, stderr = client.exec_command(self.parse_command())
                     
