@@ -1,5 +1,5 @@
+# Python 3.9.12
 import gui, threading
-
 
 def main():
     wnd.create()
