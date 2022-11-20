@@ -15,9 +15,9 @@ class Window():
         """
         Window initialization
         """
-        self.cfg = config.Config()
-        self.__version__ = '1.0.1.3'
         print('Window initialization started.')
+        self.cfg = config.Config()
+        self.__version__ = '1.0.1.4'
 
     def callback(self, sender, data):
         """
@@ -79,7 +79,7 @@ class Window():
                 dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
                 dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
                 dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
-
+                
                 if self.get_current_version() != self.__version__:
                     dpg.configure_item('b_update', show=True)
             
@@ -192,7 +192,7 @@ class Window():
         Returns:
             str: current version
         """
-        return requests.get('https://raw.githubusercontent.com/OpsecGuy/Awesome-Server-Manager/main/version').text.replace('\n', '')
+        return requests.get('https://raw.githubusercontent.com/OpsecGuy/Awesome-Server-Manager/main/version', headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}).text.replace('\n', '')
 
     def connect(self) -> None:
         """

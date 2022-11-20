@@ -24,7 +24,6 @@ class Config():
         """
         Config initialization
         """
-
         print('Config initialization started.')
         self.config_file = 'servers.json'
         self.config_path = os.getcwd() + '\\' + self.config_file
