@@ -1,4 +1,5 @@
 ## Awesome Server Manager v1
+Currently supported systems: Windows
 
 ## Description
 Awesome Server Manager is a tool which saves your time and without loggining manually to each server you can check if server is up or down or even execute commands directly from your PC.
