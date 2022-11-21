@@ -43,14 +43,16 @@ class Config():
 
     def load_config(self) -> None:
         """
-        Loads json file where servers are hosted
+        Loads json file where servers are hosted.
         """
-
-        with open(self.config_file, 'r', encoding='utf-8') as file:
-            file.flush()
-            json_buffer = json.load(file)
-            file.close()
-            return json_buffer
+        try:
+            with open(self.config_file, 'r', encoding='utf-8') as file:
+                file.flush()
+                json_buffer = json.load(file)
+                file.close()
+                return json_buffer
+        except OSError:
+            return False
 
     def get_servers(self) -> list:
         """
@@ -71,13 +73,12 @@ class Config():
         Returns value of variable specified in config file.
         Args:
             server (str): server name which we choose to manage from dictionary.
-            value (str): sets wanted value
+            value (str): sets wanted value.
+        Returns:
+            any: item value
         """
-
-        try:
-            file = self.load_config()
-            for i in file:
-                if i == server:
-                    return file[i][value]
-        except Exception:
-            pass
+        file = self.load_config()
+        for i in file:
+            if i == server:
+                return file[i][value]
+        return None

@@ -1,6 +1,7 @@
 """Window class where we visualize what we do"""
 import time
 import os
+import socket
 import webbrowser
 from sys import stderr, stdin, stdout
 import dearpygui.dearpygui as dpg
@@ -9,7 +10,7 @@ import requests
 import config
 
 class Window():
-    """Creates window aKa GUI"""
+    """Manage visual interface"""
 
     def __init__(self) -> None:
         """
@@ -17,18 +18,18 @@ class Window():
         """
         print('Window initialization started.')
         self.cfg = config.Config()
-        self.__version__ = '1.0.1.4'
+        self.__version__ = '1.0.1.5'
 
     def callback(self, sender, data):
         """
-        Returns callback info
+        Returns callback info.
         """
         print(f'{sender} ==> {data}')
         return sender, data
 
     def create(self) -> None:
         """
-        Creates window context
+        Creates window context.
         """
         dpg.create_context()
 
@@ -71,20 +72,17 @@ class Window():
         Keeps GUI updated when changes are done.
         """
         while True:
-            try:
-                if os.path.exists(self.cfg.config_path) is False:
-                    dpg.set_value('status', f'Servers list could not be found!\nCreating new {self.cfg.config_file}')
-                    self.cfg.create_example()
+            if os.path.exists(self.cfg.config_path) is False:
+                dpg.set_value('status', f'Could not find {self.cfg.config_file}.\nNew config has been created.')
+                self.cfg.create_example()
 
-                dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
-                dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
-                dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
-                
-                if self.get_current_version() != self.__version__:
-                    dpg.configure_item('b_update', show=True)
-            
-            except Exception as err:
-                print(err)
+            dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
+            dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
+            dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
+
+            if self.get_current_version() != self.__version__:
+                dpg.configure_item('b_update', show=True)
+
             time.sleep(0.01)
 
     def run(self) -> None:
@@ -99,7 +97,7 @@ class Window():
             max_height=400,                     \
             resizable=False,                    \
             vsync=True)
-        
+
         dpg.setup_dearpygui()
         dpg.show_viewport()
         dpg.start_dearpygui()
@@ -131,45 +129,38 @@ class Window():
         Retrieves file which stores commands.
 
         Returns:
-            str: full file name with extension
+            str: full file name with extension.
         """
-        try:
-            command_file_name = dpg.get_value('i_commands')
-            file_extension = dpg.get_value('rb_extension')
-            if command_file_name != '':
-                path = f"{os.getcwd()}\\{command_file_name + file_extension}"
-                dpg.set_value('status', f'Reading {command_file_name + file_extension}...')
-                return command_file_name + file_extension
+        command_file_name = dpg.get_value('i_commands')
+        file_extension = dpg.get_value('rb_extension')
+        if command_file_name != '':
+            dpg.set_value('status', f'Reading {command_file_name + file_extension}.')
+            return command_file_name + file_extension
 
-            dpg.set_value('status', 'No file has been specified!')
-            return None
+        dpg.set_value('status', f'Could not find {command_file_name + file_extension} in\n{os.getcwd()}!')
+        return 'None'
 
-        except Exception as err:
-            dpg.set_value('status', f'Could not find {command_file_name + file_extension} in\n{os.getcwd()}')
-
-    def is_valid(self, stage: int) -> bool:
+    def is_valid(self, protection: str) -> None:
         """Most of exceptions should be handled here.
         Args:
-            stage (int):\n
-            1 - Checks if server name is not None and checks if file with commands is valid.\n
-            2 - Only checks if server name is not None.
+            protection (int):\n
+            light - Only checks if server name is not None.\n
+            full - Checks if server name is not None and checks if file with commands is valid.
 
         Returns:
-            bool: True/False
+            bool: True/False/None
         """
         if dpg.get_value('servers_list') == 'None':
             dpg.set_value('status', 'Chose correct server!')
             return False
 
-        if stage == 1:
+        if protection == 'full':
             dpg.set_value('status', 'Parsing commands...')
-            if self.get_input_file() is None:
+            if self.get_input_file() == 'None':
                 return False
-            else:
-                return True
-
-        if stage == 2:
-            return True
+        elif protection == 'light':
+            pass
+        return True
 
     def parse_command(self) -> str:
         """
@@ -192,56 +183,54 @@ class Window():
         Returns:
             str: current version
         """
-        return requests.get('https://raw.githubusercontent.com/OpsecGuy/Awesome-Server-Manager/main/version', headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}).text.replace('\n', '')
+        return requests.get('https://raw.githubusercontent.com/OpsecGuy/Awesome-Server-Manager/main/version', headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}, timeout=5.0).text.replace('\n', '')
 
-    def connect(self) -> None:
+    def connect(self) -> bool:
         """
         Check if it's possible to connect to the server.\n
         Error log is printed out in GUI.
         """
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        dpg.set_value('status', f'[CONNECT] Connecting to {dpg.get_value("ip")}')
-        try:
-            if self.is_valid(stage=2):
-                try:
-                    client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
-                except Exception:
-                    dpg.set_value('status', '[CONNECT] Connection Failed!')
-                    return
-
+        dpg.set_value('status', f'[CONNECT] Connecting to {dpg.get_value("ip")}.')
+        if self.is_valid(protection='light'):
+            try:
+                client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
                 client.close()
                 dpg.set_value('status', '[CONNECT] Task Finished!')
+            except socket.timeout:
+                dpg.set_value('status', '[CONNECT] Fail: Server Timed out!')
 
-        except Exception as err:
-            dpg.set_value('status', f'[CONNECT] An Error Occurred!\nDETAILS:\n{err}')
+        return False
 
-    def execute_cmd(self) -> None:
+    def execute_cmd(self) -> bool:
         """
         Executes preapered commands to be executed on the server.\n
         Creates log file with format: *ip*.txt.\n
         If the same server has already log file, old one gonna be flushed.
         """
-        try:
-            client = paramiko.SSHClient()
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            dpg.set_value('status', f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
-            if self.is_valid(stage=1):
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        dpg.set_value('status', f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
+        if self.is_valid(protection='full'):
+            try:
+                client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
+            except socket.timeout:
+                dpg.set_value('status', '[EXECUTE] Fail: Server Timed out!')
+                return
 
-                try:
-                    client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
-                except Exception:
-                    dpg.set_value('status', '[EXECUTE] Connection Failed!')
-                    return
-
+            try:
                 with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
-                    stdin, stdout, stderr = client.exec_command(self.parse_command())
+                    try:
+                        stdin, stdout, stderr = client.exec_command(self.parse_command())
+                    except paramiko.SSHException:
+                        dpg.set_value('status', '[EXECUTE] Failed to execute commands!')
+                        return
 
                     for output in iter(stdout.readline, ''):
                         log_file.writelines(output)
+            except OSError:
+                dpg.set_value('status', '[EXECUTE] Failed open/write to file!')
 
-                client.close()
-                dpg.set_value('status', '[EXECUTE] Task Finished!')
-
-        except Exception as err:
-            dpg.set_value('status', f"[EXECUTE] An Error Occurred!\nDETAILS:\n{err}")
+            client.close()
+            dpg.set_value('status', '[EXECUTE] Task Finished!')
