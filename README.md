@@ -1,22 +1,35 @@
 ## Awesome Server Manager v1
-Currently supported systems: Windows
+Python version used: 3.9.12 64-bit
+Supported systems: Windows
 
 ## Description
-Awesome Server Manager is a tool which saves your time and without loggining manually to each server you can check if server is up or down or even execute commands directly from your PC.
+Awesome Server Manager is a tool which will make your life way easier by loggining automatically to each server and run tasks directly from your PC and save your valuable time.  
+  
+'servers.json' is created automatically with example config if it doesn't exist. File stores all necessary data about your server(s). For each server you can customize ip, port, username, password.
 
-## Usage
-'servers.json' is created automatically with example config. File stores all necessary data about your servers. For each server you can customize name under which, server data is stored. IP, port, username, password can be set in file.
-
-Default 'commands.txt' file is where you put commands that will be executed on the server. Keep in mind that you can set any name of the file. Remember to insert each command in separated lines.
-
-Most important thing is that 'servers.json' and file which stores commands must be in the same folder where script is located.
-
-When executing commands log file (IP.txt) is being created for each server. File overrides itself each time you execute that function.
+By default 'commands.txt' is a file where you must put commands that will be executed on the server. You can create any text file, just remember to set name of it in correct form and be sure to place it in folder where application is stored.  
+Worth to note is that each command should be in separated line like below:
+```
+whoami
+apt update
+apt upgrade -y
+```
+### REMINDER!
+Keep 'servers.json' and file which stores your commands (?.txt) in the same folder where application is located.
+When executing commands log file (SERVER_IP.txt) is being created for look up into server output. File overrides itself each time you execute that function.
 
 ## Setup
-1. Download & install python 3.9.x (Make sure to add Python to the PATH. You can do it with installator)
-2. Open Command Prompt (CMD) and type 'pip install -r setup.txt'
-3. Go to the directory where you store script and type '(py|python) app.py'
+### Using from source (Windows only)
+1. Download and install python 3.9.x - [DOWNLOAD](https://www.python.org/downloads/release/python-3912/)
+2. Make sure to add Python to the PATH. You can do it by marking checkbox in installator
+3. Download all files from [here](https://github.com/OpsecGuy/Awesome-Server-Manager/archive/refs/heads/main.zip)
+4. Unpack zip to any folder. Then open a Command Prompt (CMD) and navigate to where downloaded files are stored and type 'pip install -r setup.txt'
+5. After you finish installing necesssary packages use '(py|python) app.py' to run program.
+### Using executable from Release page (Windows only) (Common)
+This is the easiest way if you just want to start using application :)
+1. Download newest app.py version from [here](https://github.com/OpsecGuy/Awesome-Server-Manager/releases) and save to any folder
+2. Start program
+3. Add your servers in servers.json and press refresh in application GUI
 
 ## Screenshot:
 ![This is an image](https://i.imgur.com/UNiTdiB.png)
