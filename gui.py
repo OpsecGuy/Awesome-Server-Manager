@@ -8,6 +8,7 @@ import dearpygui.dearpygui as dpg
 import paramiko
 import requests
 import config
+import logger
 
 class Window():
     """Manage visual interface"""
@@ -18,7 +19,8 @@ class Window():
         """
         print('Window initialization started.')
         self.cfg = config.Config()
-        self.__version__ = '1.0.1.6'
+        self.logger = logger.Logger()
+        self.__version__ = '1.0.1.7'
 
     def callback(self, sender, data):
         """
@@ -35,12 +37,12 @@ class Window():
 
         with dpg.window(
             label='Window',
-            height=400,
             width=400,
+            height=500,
             no_title_bar=True,
-            no_bring_to_front_on_focus=True,
-            no_resize=True,
-            no_move=True):
+            no_resize=False,
+            no_move=True,
+            tag='w_main'):
 
             with dpg.group(horizontal=True):
                 dpg.add_button(label='Refresh',
@@ -97,18 +99,24 @@ class Window():
                                      horizontal=True,
                                      tag='rb_extension')
             dpg.add_separator()
-            dpg.add_text(label='Status',
-                         default_value='Status: Waiting...',
-                         color=(0, 255, 0),
-                         tag='status',)
+            dpg.add_input_text(label='',
+                               readonly=True,
+                               multiline=True,
+                               enabled=False,
+                               width=350,
+                               height=150,
+                               tag='i_logs_area')
 
-            dpg.add_button(label='Update',
-                           show=False,
-                           pos=(8, 335),
-                           tag='b_update',
-                           callback=lambda: webbrowser.open(
-                               'https://github.com/OpsecGuy/Awesome-Server-Manager'
-                            ))
+            with dpg.group(horizontal=True):
+                dpg.add_button(label='Clean Logs',
+                            callback=self.logger.reset)
+
+                dpg.add_button(label='Update',
+                            show=False,
+                            tag='b_update',
+                            callback=lambda: webbrowser.open(
+                                'https://github.com/OpsecGuy/Awesome-Server-Manager'
+                                ))
 
     def update(self) -> None:
         """
@@ -116,13 +124,19 @@ class Window():
         """
         while True:
             if os.path.exists(self.cfg.config_path) is False:
-                dpg.set_value('status', f'Could not find {self.cfg.config_file}.\n\
+                self.logger.log(f'Could not find {self.cfg.config_file}.\n\
                               New config has been created.')
                 self.cfg.create_example()
 
             dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
             dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
             dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
+            dpg.set_value('i_logs_area', '\n'.join(self.logger.log_buffer))
+
+            vp_width = dpg.get_viewport_width()
+            vp_height = dpg.get_viewport_height()
+            dpg.configure_item(item='w_main', width=vp_width - 1)
+            dpg.configure_item(item='w_main', height=vp_height - 1)
 
             if self.get_current_version() != self.__version__:
                 dpg.configure_item('b_update', show=True)
@@ -134,12 +148,10 @@ class Window():
         Execute/Start window thread.
         """
         dpg.create_viewport(
-            title=f'Awesome Server Manager {self.__version__}', \
-            height=400,                         \
-            width=400,                          \
-            max_width=400,                      \
-            max_height=400,                     \
-            resizable=False,                    \
+            title=f'Awesome Server Manager {self.__version__}',
+            height=500,
+            width=400,
+            resizable=True,
             vsync=True)
 
         dpg.setup_dearpygui()
@@ -178,10 +190,10 @@ class Window():
         command_file_name = dpg.get_value('i_commands')
         file_extension = dpg.get_value('rb_extension')
         abs_path = f"{os.getcwd()}\\{command_file_name + file_extension}"
-        if command_file_name != '' and abs_path is True:
+        if command_file_name != '' and os.path.exists(abs_path) is True:
             return command_file_name + file_extension
 
-        dpg.set_value('status', f'Could not find {command_file_name + file_extension} in\n{os.getcwd()}!')
+        self.logger.log(f'Could not find {command_file_name + file_extension} in\n{os.getcwd()}!')
         return 'None'
 
     def is_valid(self, protection: str) -> None:
@@ -195,11 +207,11 @@ class Window():
             bool: True/False/None
         """
         if dpg.get_value('servers_list') == 'None':
-            dpg.set_value('status', 'Chose correct server!')
+            self.logger.log('Chose correct server!')
             return False
 
         if protection == 'full':
-            dpg.set_value('status', 'Parsing commands...')
+            self.logger.log('Parsing commands...')
             if self.get_input_file() == 'None':
                 return False
         elif protection == 'light':
@@ -238,7 +250,7 @@ class Window():
         """
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        dpg.set_value('status', f'[CONNECT] Connecting to {dpg.get_value("ip")}')
+        self.logger.log(f'[CONNECT] Connecting to {dpg.get_value("ip")}')
         if self.is_valid(protection='light'):
             try:
                 client.connect(hostname=dpg.get_value('ip'),
@@ -247,9 +259,9 @@ class Window():
                                password=dpg.get_value('password'),
                                timeout=3.0)
                 client.close()
-                dpg.set_value('status', '[CONNECT] Task Completed!')
+                self.logger.log('[CONNECT] Task Completed!')
             except socket.timeout:
-                dpg.set_value('status', '[CONNECT] Fail: Server Timed out!')
+                self.logger.log('[CONNECT] Fail: Server Timed out!')
 
         return False
 
@@ -261,7 +273,7 @@ class Window():
         """
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        dpg.set_value('status', f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
+        self.logger.log(f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
         if self.is_valid(protection='full'):
             try:
                 client.connect(hostname=dpg.get_value('ip'),
@@ -270,22 +282,22 @@ class Window():
                                password=dpg.get_value('password'),
                                timeout=3.0)
             except socket.timeout:
-                dpg.set_value('status', '[EXECUTE] Fail: Server Timed out!')
+                self.logger.log('[EXECUTE] Fail: Server Timed out!')
                 return
 
             try:
                 with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
                     try:
-                        dpg.set_value('status', '[EXECUTE] Failed to execute commands!')
+                        self.logger.log('[EXECUTE] Executing commands...')
                         stdin, stdout, stderr = client.exec_command(self.parse_command())
                     except paramiko.SSHException:
-                        dpg.set_value('status', '[EXECUTE] Failed to execute commands!')
+                        self.logger.log('[EXECUTE] Failed to execute commands!')
                         return
 
                     for output in iter(stdout.readline, ''):
                         log_file.writelines(output)
             except OSError:
-                dpg.set_value('status', '[EXECUTE] Failed open/write to the log file!')
+                self.logger.log('[EXECUTE] Failed open/write to the log file!')
 
             client.close()
-            dpg.set_value('status', '[EXECUTE] Task Completed!')
+            self.logger.log('[EXECUTE] Task Completed!')
