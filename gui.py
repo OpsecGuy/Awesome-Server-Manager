@@ -20,7 +20,7 @@ class Window():
         print('Window initialization started.')
         self.cfg = config.Config()
         self.logger = logger.Logger()
-        self.__version__ = '1.0.1.7'
+        self.__version__ = '1.0.1.8'
 
     def callback(self, sender, data):
         """
@@ -108,7 +108,7 @@ class Window():
                                tag='i_logs_area')
 
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Clean Logs',
+                dpg.add_button(label='Clear Logs',
                             callback=self.logger.reset)
 
                 dpg.add_button(label='Update',
@@ -207,13 +207,13 @@ class Window():
             bool: True/False/None
         """
         if dpg.get_value('servers_list') == 'None':
-            self.logger.log('Chose correct server!')
+            self.logger.log('[OTHER] Chose correct server!')
             return False
 
         if protection == 'full':
-            self.logger.log('Parsing commands...')
             if self.get_input_file() == 'None':
                 return False
+            self.logger.log('[OTHER] Grabbing data from commands file.')
         elif protection == 'light':
             pass
         return True
@@ -225,6 +225,7 @@ class Window():
             str: command
         """
         buffer = ''
+        self.logger.log('[OTHER] Parsing commands...')
         with open(self.get_input_file(), 'r', encoding='utf-8') as file:
             for line in file.readlines():
                 if line != '\n':
@@ -250,8 +251,8 @@ class Window():
         """
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.logger.log(f'[CONNECT] Connecting to {dpg.get_value("ip")}')
         if self.is_valid(protection='light'):
+            self.logger.log(f'[CONNECT] Connecting to {dpg.get_value("ip")}')
             try:
                 client.connect(hostname=dpg.get_value('ip'),
                                port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')),
@@ -273,8 +274,8 @@ class Window():
         """
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.logger.log(f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
         if self.is_valid(protection='full'):
+            self.logger.log(f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
             try:
                 client.connect(hostname=dpg.get_value('ip'),
                                port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')),
@@ -287,9 +288,10 @@ class Window():
 
             try:
                 with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
+                    self.logger.log(f'[EXECUTE] Writing server logs to log_{dpg.get_value("ip")}.txt')
                     try:
-                        self.logger.log('[EXECUTE] Executing commands...')
                         stdin, stdout, stderr = client.exec_command(self.parse_command())
+                        self.logger.log('[EXECUTE] Commands executed correctly!')
                     except paramiko.SSHException:
                         self.logger.log('[EXECUTE] Failed to execute commands!')
                         return
