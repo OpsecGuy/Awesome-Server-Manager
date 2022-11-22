@@ -26,7 +26,7 @@ class Config():
         """
         print('Config initialization started.')
         self.config_file = 'servers.json'
-        self.config_path = os.getcwd() + '\\' + self.config_file
+        self.config_path = f"{os.getcwd()}\\{self.config_file}"
 
         if os.path.exists(self.config_path) is False:
             self.create_example()
@@ -43,7 +43,7 @@ class Config():
 
     def load_config(self) -> None:
         """
-        Loads json file where servers are hosted.
+        Saves servers list to file.
         """
         try:
             with open(self.config_file, 'r', encoding='utf-8') as file:
@@ -75,7 +75,7 @@ class Config():
             server (str): server name which we choose to manage from dictionary.
             value (str): sets wanted value.
         Returns:
-            any: item value
+            any: value
         """
         file = self.load_config()
         for i in file:

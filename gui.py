@@ -18,7 +18,7 @@ class Window():
         """
         print('Window initialization started.')
         self.cfg = config.Config()
-        self.__version__ = '1.0.1.5'
+        self.__version__ = '1.0.1.6'
 
     def callback(self, sender, data):
         """
@@ -34,38 +34,81 @@ class Window():
         dpg.create_context()
 
         with dpg.window(
-            label='Window',                  \
-            height=400,                      \
-            width=400,                       \
-            no_title_bar=True,               \
-            no_bring_to_front_on_focus=True, \
-            no_resize=True,                  \
+            label='Window',
+            height=400,
+            width=400,
+            no_title_bar=True,
+            no_bring_to_front_on_focus=True,
+            no_resize=True,
             no_move=True):
 
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Refresh', tag='b_refresh', callback=lambda: dpg.configure_item('servers_list', items=self.cfg.get_servers()))
-                dpg.add_button(label='Connect', tag='b_connect', callback=self.connect)
-                dpg.add_button(label='Execute', tag='b_execute', callback=self.execute_cmd)
-            dpg.add_listbox(items=self.cfg.get_servers(), tag='servers_list', num_items=8, width=200)
+                dpg.add_button(label='Refresh',
+                               tag='b_refresh',
+                               callback=lambda: dpg.configure_item(item='servers_list',
+                                                                   items=self.cfg.get_servers()))
+                dpg.add_button(label='Connect',
+                               tag='b_connect',
+                               callback=self.connect)
+
+                dpg.add_button(label='Execute',
+                               tag='b_execute',
+                               callback=self.execute_cmd)
+
+            dpg.add_listbox(items=self.cfg.get_servers(),
+                            num_items=8,
+                            width=200,
+                            tag='servers_list')
 
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Show Info', tag='b_unsafe', callback=self.show_context)
-                dpg.add_button(label='Hide Info', tag='b_safe', callback=self.hide_context)
+                dpg.add_button(label='Show Info',
+                               tag='b_unsafe',
+                               callback=self.show_context)
+                dpg.add_button(label='Hide Info',
+                               tag='b_safe',
+                               callback=self.hide_context)
 
             with dpg.group(horizontal=True):
-                dpg.add_text(label='IP', tag='ip', show=False, color=(0, 255, 0))
-                dpg.add_text(label='Username', tag='username', show=False, color=(220, 0, 40))
-                dpg.add_text(label='Password', tag='password', show=False, color=(220, 0, 40))
-
+                dpg.add_text(label='IP',
+                             show=False,
+                             color=(0, 255, 0),
+                             tag='ip',)
+                dpg.add_text(label='Username',
+                             show=False,
+                             color=(220, 0, 40),
+                             tag='username')
+                dpg.add_text(label='Password',
+                             show=False,
+                             color=(220, 0, 40),
+                             tag='password')
             dpg.add_separator()
-            dpg.add_input_text(label='Commands File', default_value='commands', width=200 ,tag='i_commands')
+            dpg.add_input_text(label='Commands File',
+                               default_value='commands',
+                               width=200,
+                               tag='i_commands')
 
             with dpg.group(horizontal=True):
-                dpg.add_button(label='Clear', tag='b_purge', callback=lambda: dpg.set_value('i_commands', ''))
-                dpg.add_radio_button(['.txt', '.json'], label='extension', tag='rb_extension', default_value='.txt', horizontal=True)
+                dpg.add_button(label='Clear',
+                               tag='b_clear',
+                               callback=lambda: dpg.set_value('i_commands', ''))
+                dpg.add_radio_button(label='File extension',
+                                     items=['.txt', '.json'],
+                                     default_value='.txt',
+                                     horizontal=True,
+                                     tag='rb_extension')
             dpg.add_separator()
-            dpg.add_text('Status: Waiting...', tag='status', color=(0, 255, 0))
-            dpg.add_button(label='Update', tag='b_update', show=False, pos=(8, 335), callback=lambda: webbrowser.open('https://github.com/OpsecGuy/Awesome-Server-Manager'))
+            dpg.add_text(label='Status',
+                         default_value='Status: Waiting...',
+                         color=(0, 255, 0),
+                         tag='status',)
+
+            dpg.add_button(label='Update',
+                           show=False,
+                           pos=(8, 335),
+                           tag='b_update',
+                           callback=lambda: webbrowser.open(
+                               'https://github.com/OpsecGuy/Awesome-Server-Manager'
+                            ))
 
     def update(self) -> None:
         """
@@ -73,7 +116,8 @@ class Window():
         """
         while True:
             if os.path.exists(self.cfg.config_path) is False:
-                dpg.set_value('status', f'Could not find {self.cfg.config_file}.\nNew config has been created.')
+                dpg.set_value('status', f'Could not find {self.cfg.config_file}.\n\
+                              New config has been created.')
                 self.cfg.create_example()
 
             dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
@@ -133,8 +177,8 @@ class Window():
         """
         command_file_name = dpg.get_value('i_commands')
         file_extension = dpg.get_value('rb_extension')
-        if command_file_name != '':
-            dpg.set_value('status', f'Reading {command_file_name + file_extension}.')
+        abs_path = f"{os.getcwd()}\\{command_file_name + file_extension}"
+        if command_file_name != '' and abs_path is True:
             return command_file_name + file_extension
 
         dpg.set_value('status', f'Could not find {command_file_name + file_extension} in\n{os.getcwd()}!')
@@ -183,7 +227,9 @@ class Window():
         Returns:
             str: current version
         """
-        return requests.get('https://raw.githubusercontent.com/OpsecGuy/Awesome-Server-Manager/main/version', headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}, timeout=5.0).text.replace('\n', '')
+        return requests.get(url='https://raw.githubusercontent.com/OpsecGuy/Awesome-Server-Manager/main/version',
+                            headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache'},
+                            timeout=5.0).text.replace('\n', '')
 
     def connect(self) -> bool:
         """
@@ -192,12 +238,16 @@ class Window():
         """
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        dpg.set_value('status', f'[CONNECT] Connecting to {dpg.get_value("ip")}.')
+        dpg.set_value('status', f'[CONNECT] Connecting to {dpg.get_value("ip")}')
         if self.is_valid(protection='light'):
             try:
-                client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
+                client.connect(hostname=dpg.get_value('ip'),
+                               port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')),
+                               username=dpg.get_value('username'),
+                               password=dpg.get_value('password'),
+                               timeout=3.0)
                 client.close()
-                dpg.set_value('status', '[CONNECT] Task Finished!')
+                dpg.set_value('status', '[CONNECT] Task Completed!')
             except socket.timeout:
                 dpg.set_value('status', '[CONNECT] Fail: Server Timed out!')
 
@@ -214,7 +264,11 @@ class Window():
         dpg.set_value('status', f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
         if self.is_valid(protection='full'):
             try:
-                client.connect(hostname=dpg.get_value('ip'), port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')), username=dpg.get_value('username'), password=dpg.get_value('password'), timeout=3.0)
+                client.connect(hostname=dpg.get_value('ip'),
+                               port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')),
+                               username=dpg.get_value('username'),
+                               password=dpg.get_value('password'),
+                               timeout=3.0)
             except socket.timeout:
                 dpg.set_value('status', '[EXECUTE] Fail: Server Timed out!')
                 return
@@ -222,6 +276,7 @@ class Window():
             try:
                 with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
                     try:
+                        dpg.set_value('status', '[EXECUTE] Failed to execute commands!')
                         stdin, stdout, stderr = client.exec_command(self.parse_command())
                     except paramiko.SSHException:
                         dpg.set_value('status', '[EXECUTE] Failed to execute commands!')
@@ -230,7 +285,7 @@ class Window():
                     for output in iter(stdout.readline, ''):
                         log_file.writelines(output)
             except OSError:
-                dpg.set_value('status', '[EXECUTE] Failed open/write to file!')
+                dpg.set_value('status', '[EXECUTE] Failed open/write to the log file!')
 
             client.close()
-            dpg.set_value('status', '[EXECUTE] Task Finished!')
+            dpg.set_value('status', '[EXECUTE] Task Completed!')
