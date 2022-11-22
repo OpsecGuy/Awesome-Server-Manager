@@ -20,7 +20,7 @@ class Window():
         print('Window initialization started.')
         self.cfg = config.Config()
         self.logger = logger.Logger()
-        self.__version__ = '1.0.1.8'
+        self.__version__ = '1.0.1.9'
 
     def callback(self, sender, data):
         """
@@ -135,8 +135,9 @@ class Window():
 
             vp_width = dpg.get_viewport_width()
             vp_height = dpg.get_viewport_height()
-            dpg.configure_item(item='w_main', width=vp_width - 1)
-            dpg.configure_item(item='w_main', height=vp_height - 1)
+            dpg.configure_item(item='w_main', width=vp_width - 5)
+            dpg.configure_item(item='w_main', height=vp_height - 5)
+            dpg.configure_item(item='i_logs_area', width=vp_width - 30)
 
             if self.get_current_version() != self.__version__:
                 dpg.configure_item('b_update', show=True)
