@@ -19,4 +19,4 @@ When executing commands log file (IP.txt) is being created for each server. File
 3. Go to the directory where you store script and type '(py|python) app.py'
 
 ## Screenshot:
-![This is an image](https://i.imgur.com/TkdcmGD.png)
+![This is an image](https://i.imgur.com/UNiTdiB.png)
