@@ -1,5 +1,5 @@
 ## Awesome Server Manager v1
-Python version used: 3.9.12 64-bit
+Python version used: 3.9.12 64-bit  
 Supported systems: Windows
 
 ## Description
