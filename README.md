@@ -32,4 +32,4 @@ This is the easiest way if you just want to start using application :)
 3. Add your servers in servers.json and press refresh in application GUI
 
 ## Screenshot:
-![This is an image](https://i.imgur.com/UNiTdiB.png)
+![This is an image](https://i.imgur.com/KI5rNcs.png)
