@@ -11,7 +11,7 @@ class Logger():
         """
         Initialize Logger
         """
-        self.log_buffer = []
+        self.logs_buffer = []
 
     def log(self, text: str) -> str:
         """
@@ -21,10 +21,10 @@ class Logger():
 
         """
         text = f"{datetime.datetime.now().strftime('%H:%M:%S')} {text}"
-        return self.log_buffer.append(text)
+        return self.logs_buffer.append(text)
 
     def reset(self) -> None:
         """
         Reset log buffer.
         """
-        self.log_buffer.clear()
+        self.logs_buffer.clear()

@@ -3,7 +3,6 @@ import time
 import os
 import socket
 import webbrowser
-from sys import stderr, stdin, stdout
 import dearpygui.dearpygui as dpg
 import paramiko
 import requests
@@ -20,7 +19,7 @@ class Window():
         print('Window initialization started.')
         self.cfg = config.Config()
         self.logger = logger.Logger()
-        self.__version__ = '1.0.1.9'
+        self.__version__ = '1.0.2.0'
 
     def callback(self, sender, data):
         """
@@ -131,7 +130,7 @@ class Window():
             dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
             dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
             dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
-            dpg.set_value('i_logs_area', '\n'.join(self.logger.log_buffer))
+            dpg.set_value('i_logs_area', '\n'.join(self.logger.logs_buffer))
 
             vp_width = dpg.get_viewport_width()
             vp_height = dpg.get_viewport_height()
@@ -142,7 +141,7 @@ class Window():
             if self.get_current_version() != self.__version__:
                 dpg.configure_item('b_update', show=True)
 
-            time.sleep(0.01)
+            time.sleep(0.001)
 
     def run(self) -> None:
         """
@@ -264,7 +263,6 @@ class Window():
                 self.logger.log('[CONNECT] Task Completed!')
             except socket.timeout:
                 self.logger.log('[CONNECT] Fail: Server Timed out!')
-
         return False
 
     def execute_cmd(self) -> bool:
