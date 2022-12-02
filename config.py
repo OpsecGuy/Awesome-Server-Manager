@@ -1,6 +1,7 @@
 """Files Management"""
 import os
 import json
+import platform
 
 example_config = {
     'test_server': {
@@ -25,12 +26,19 @@ class Config():
         Config initialization
         """
         print('Config initialization started.')
-        self.config_file = 'servers.json'
-        self.config_path = f"{os.getcwd()}\\{self.config_file}"
+        if platform.system() == 'Windows':
+            self.config_file = 'servers.json'
+            self.config_path = f"{os.getcwd()}\\{self.config_file}"
 
-        if os.path.exists(self.config_path) is False:
-            self.create_example()
-            print(f'Could not find {self.config_file}! New config has been created.')
+            if os.path.exists(self.config_path) is False:
+                self.create_example()
+                print(f'Could not find {self.config_file}! New config has been created.')
+        elif platform.system() == 'Linux':
+            print(f'System LINUX is not supported yet!')
+            os._exit(0)
+        else:
+            print(f'Your system is not supported!')
+            os._exit(0)
 
     def create_example(self) -> bool:
         """
@@ -63,7 +71,6 @@ class Config():
         file = self.load_config()
         servers = []
         servers.clear()
-        servers.append(None)
         for i in file:
             servers.append(i)
         return servers

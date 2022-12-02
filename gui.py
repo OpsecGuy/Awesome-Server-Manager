@@ -8,6 +8,7 @@ import paramiko
 import requests
 import config
 import logger
+import enum
 
 class Window():
     """Manage visual interface"""
@@ -19,7 +20,12 @@ class Window():
         print('Window initialization started.')
         self.cfg = config.Config()
         self.logger = logger.Logger()
-        self.__version__ = '1.0.2.0'
+        self.__version__ = '1.0.2.1'
+
+        self.functions = {
+            'Test Connect': self.connect,
+            'Mass Execute': self.execute_cmd,
+        }
 
     def callback(self, sender, data):
         """
@@ -43,101 +49,116 @@ class Window():
             no_move=True,
             tag='w_main'):
 
-            with dpg.group(horizontal=True):
-                dpg.add_button(label='Refresh',
-                               tag='b_refresh',
-                               callback=lambda: dpg.configure_item(item='servers_list',
-                                                                   items=self.cfg.get_servers()))
-                dpg.add_button(label='Connect',
-                               tag='b_connect',
-                               callback=self.connect)
+            with dpg.tab_bar(label="Menu"):
+                with dpg.tab(label="Main"):
+                    with dpg.group(horizontal=True):
+                        dpg.add_button(label='Refresh List',
+                                    tag='b_refresh',
+                                    callback=lambda: dpg.configure_item(item='servers_list',
+                                                                        items=self.cfg.get_servers()))
+                    with dpg.group(horizontal=True):
+                        dpg.add_listbox(items=self.cfg.get_servers(),
+                                        num_items=8,
+                                        width=200,
+                                        tag='servers_list')
+                        with dpg.group(horizontal=False):
+                            dpg.add_text(label='IP',
+                                        show=False,
+                                        color=(0, 255, 0),
+                                        tag='ip',)
+                            dpg.add_text(label='Username',
+                                        show=False,
+                                        color=(220, 0, 40),
+                                        tag='username')
+                            dpg.add_text(label='Password',
+                                        show=False,
+                                        color=(220, 0, 40),
+                                        tag='password')
+                    dpg.add_separator()
+                    dpg.add_input_text(label='Commands File',
+                                    default_value='commands',
+                                    width=200,
+                                    tag='i_commands')
 
-                dpg.add_button(label='Execute',
-                               tag='b_execute',
-                               callback=self.execute_cmd)
+                    with dpg.group(horizontal=True):
+                        dpg.add_radio_button(label='File extension',
+                                            items=['.txt', '.json'],
+                                            default_value='.txt',
+                                            horizontal=True,
+                                            tag='rb_extension')
+                    dpg.add_separator()
+                    dpg.add_combo(items=tuple(self.functions.keys()), tag='i_function')
+                    dpg.add_button(label='Start', tag='b_start', callback=lambda: self.functions.get(f"{dpg.get_value('i_function')}")())
+                    dpg.add_button(label='Update Client',
+                                show=False,
+                                tag='b_update',
+                                callback=lambda: webbrowser.open(
+                                    'https://github.com/OpsecGuy/Awesome-Server-Manager/releases'
+                                    ))
+                with dpg.tab(label="Logs"):
+                    dpg.add_input_text(label='',
+                                    readonly=True,
+                                    multiline=True,
+                                    enabled=False,
+                                    width=350,
+                                    height=150,
+                                    tag='i_logs_area')
+                    with dpg.group(horizontal=True):
+                        dpg.add_button(label='Clear Logs',
+                                    callback=self.logger.reset)
+                with dpg.tab(label="Settings"):
+                    dpg.add_checkbox(label='Show Server Info', tag='c_show_server_info')
+                    dpg.add_input_float(label='Server timeout',
+                                        default_value=3.0,
+                                        min_value=1.0,
+                                        max_value=15.0,
+                                        min_clamped=True,
+                                        max_clamped=True,
+                                        format='%.1f',
+                                        width=200,
+                                        tag='i_server_timeout')
 
-            dpg.add_listbox(items=self.cfg.get_servers(),
-                            num_items=8,
-                            width=200,
-                            tag='servers_list')
-
-            with dpg.group(horizontal=True):
-                dpg.add_button(label='Show Info',
-                               tag='b_unsafe',
-                               callback=self.show_context)
-                dpg.add_button(label='Hide Info',
-                               tag='b_safe',
-                               callback=self.hide_context)
-
-            with dpg.group(horizontal=True):
-                dpg.add_text(label='IP',
-                             show=False,
-                             color=(0, 255, 0),
-                             tag='ip',)
-                dpg.add_text(label='Username',
-                             show=False,
-                             color=(220, 0, 40),
-                             tag='username')
-                dpg.add_text(label='Password',
-                             show=False,
-                             color=(220, 0, 40),
-                             tag='password')
-            dpg.add_separator()
-            dpg.add_input_text(label='Commands File',
-                               default_value='commands',
-                               width=200,
-                               tag='i_commands')
-
-            with dpg.group(horizontal=True):
-                dpg.add_button(label='Clear',
-                               tag='b_clear',
-                               callback=lambda: dpg.set_value('i_commands', ''))
-                dpg.add_radio_button(label='File extension',
-                                     items=['.txt', '.json'],
-                                     default_value='.txt',
-                                     horizontal=True,
-                                     tag='rb_extension')
-            dpg.add_separator()
-            dpg.add_input_text(label='',
-                               readonly=True,
-                               multiline=True,
-                               enabled=False,
-                               width=350,
-                               height=150,
-                               tag='i_logs_area')
-
-            with dpg.group(horizontal=True):
-                dpg.add_button(label='Clear Logs',
-                            callback=self.logger.reset)
-
-                dpg.add_button(label='Update',
-                            show=False,
-                            tag='b_update',
-                            callback=lambda: webbrowser.open(
-                                'https://github.com/OpsecGuy/Awesome-Server-Manager'
-                                ))
+                # Tooltips area
+                with dpg.tooltip(parent='c_show_server_info'):
+                        dpg.add_text('Shows/Hides server info in Main tab.\nip\nlogin\npassword\n')
+                with dpg.tooltip(parent='i_server_timeout'):
+                        dpg.add_text('Sets connection timeout for all functions.')
+                with dpg.tooltip(parent='i_commands'):
+                        dpg.add_text('Sets name of file storing commands.\nProvide file name only!')
 
     def update(self) -> None:
         """
         Keeps GUI updated when changes are done.
         """
+        last_changed = False
         while True:
             if os.path.exists(self.cfg.config_path) is False:
                 self.logger.log(f'Could not find {self.cfg.config_file}.\n\
                               New config has been created.')
                 self.cfg.create_example()
 
-            dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
-            dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
-            dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
+            if dpg.get_value('c_show_server_info') == True:
+                last_changed = True
+                if last_changed == True:
+                    self.show_context()
+                    dpg.set_value('ip', self.cfg.get_value(dpg.get_value('servers_list'), 'IP'))
+                    dpg.set_value('username', self.cfg.get_value(dpg.get_value('servers_list'), 'username'))
+                    dpg.set_value('password', self.cfg.get_value(dpg.get_value('servers_list'), 'password'))
+            else:
+                last_changed = False
+                self.hide_context()
+            
+            # Static
             dpg.set_value('i_logs_area', '\n'.join(self.logger.logs_buffer))
 
+            # Resizable
             vp_width = dpg.get_viewport_width()
             vp_height = dpg.get_viewport_height()
             dpg.configure_item(item='w_main', width=vp_width - 5)
             dpg.configure_item(item='w_main', height=vp_height - 5)
             dpg.configure_item(item='i_logs_area', width=vp_width - 30)
-
+            
+            # Version check
             if self.get_current_version() != self.__version__:
                 dpg.configure_item('b_update', show=True)
 
@@ -252,13 +273,13 @@ class Window():
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         if self.is_valid(protection='light'):
-            self.logger.log(f'[CONNECT] Connecting to {dpg.get_value("ip")}')
+            self.logger.log(f'[CONNECT] Connecting to {self.cfg.get_value(dpg.get_value("servers_list"), "IP")}')
             try:
-                client.connect(hostname=dpg.get_value('ip'),
+                client.connect(hostname=self.cfg.get_value(dpg.get_value("servers_list"), "IP"),
                                port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')),
-                               username=dpg.get_value('username'),
-                               password=dpg.get_value('password'),
-                               timeout=3.0)
+                               username=self.cfg.get_value(dpg.get_value("servers_list"), "username"),
+                               password=self.cfg.get_value(dpg.get_value("servers_list"), "password"),
+                               timeout=dpg.get_value('i_server_timeout'))
                 client.close()
                 self.logger.log('[CONNECT] Task Completed!')
             except socket.timeout:
@@ -274,23 +295,23 @@ class Window():
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         if self.is_valid(protection='full'):
-            self.logger.log(f'[EXECUTE] Connecting to {dpg.get_value("ip")}')
+            self.logger.log(f'[EXECUTE] Connecting to {self.cfg.get_value(dpg.get_value("servers_list"), "IP")}')
             try:
-                client.connect(hostname=dpg.get_value('ip'),
+                client.connect(hostname=self.cfg.get_value(dpg.get_value("servers_list"), "IP"),
                                port=int(self.cfg.get_value(dpg.get_value('servers_list'), 'port')),
-                               username=dpg.get_value('username'),
-                               password=dpg.get_value('password'),
-                               timeout=3.0)
+                               username=self.cfg.get_value(dpg.get_value("servers_list"), "username"),
+                               password=self.cfg.get_value(dpg.get_value("servers_list"), "password"),
+                               timeout=dpg.get_value('i_server_timeout'))
             except socket.timeout:
                 self.logger.log('[EXECUTE] Fail: Server Timed out!')
                 return
 
             try:
-                with open(f'log_{dpg.get_value("ip")}.txt', 'w+', encoding='utf-8') as log_file:
-                    self.logger.log(f'[EXECUTE] Writing server logs to log_{dpg.get_value("ip")}.txt')
+                with open(f'log_{self.cfg.get_value(dpg.get_value("servers_list"), "IP")}.txt', 'w+', encoding='utf-8') as log_file:
+                    self.logger.log(f'[EXECUTE] Writing server logs to log_{self.cfg.get_value(dpg.get_value("servers_list"), "IP")}.txt')
                     try:
                         stdin, stdout, stderr = client.exec_command(self.parse_command())
-                        self.logger.log('[EXECUTE] Commands executed correctly!')
+                        self.logger.log('[EXECUTE] Executing commands...')
                     except paramiko.SSHException:
                         self.logger.log('[EXECUTE] Failed to execute commands!')
                         return
