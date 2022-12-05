@@ -1,10 +1,10 @@
 ## Awesome Server Manager v1
 Python version used: 3.11.0 64-bit  
 Supported versions: 3.5 and newer  
-Supported systems: Windows
+Supported systems: Windows, Linux
 
 ## Description
-Awesome Server Manager is a tool which will make your life way easier by loggining automatically to each server and run tasks directly from your PC which will save your valuable time.  
+Awesome Server Manager is a tool which will make your life way easier by running tasks directly from your PC which will save your valuable time.  
   
 'servers.json' is created automatically with example config if it doesn't exist. File stores all necessary data about your server(s). For each server you can customize ip, port, username, password.
 
