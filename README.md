@@ -21,7 +21,7 @@ When executing commands log file (SERVER_IP.txt) is being created for look up in
 
 ## Setup
 ### Using from source (Windows only)
-1. Download and install python 3.9.x - [DOWNLOAD](https://www.python.org/downloads/release/python-3912/)
+1. Download and install python 3.11.0 - [DOWNLOAD](https://www.python.org/downloads/release/python-3110/)
 2. Make sure to add Python to the PATH. You can do it by marking checkbox in installator
 3. Download all files from [here](https://github.com/OpsecGuy/Awesome-Server-Manager/archive/refs/heads/main.zip)
 4. Unpack zip to any folder. Then open a Command Prompt (CMD) and navigate to where downloaded files are stored and type 'pip install -r setup.txt'
