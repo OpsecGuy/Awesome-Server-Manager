@@ -23,8 +23,8 @@ class Logger():
         text = f"{datetime.datetime.now().strftime('%H:%M:%S')} {text}"
         return self.logs_buffer.append(text)
 
-    def reset(self) -> None:
+    def flush(self) -> None:
         """
-        Reset log buffer.
+        Flush log buffer.
         """
         self.logs_buffer.clear()

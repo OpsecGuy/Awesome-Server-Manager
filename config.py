@@ -26,19 +26,20 @@ class Config():
         Config initialization
         """
         print('Config initialization started.')
-        if platform.system() == 'Windows':
-            self.config_file = 'servers.json'
-            self.config_path = f"{os.getcwd()}\\{self.config_file}"
+        self.config_file = 'servers.json'
 
-            if os.path.exists(self.config_path) is False:
-                self.create_example()
-                print(f'Could not find {self.config_file}! New config has been created.')
+        if platform.system() == 'Windows':
+            self.config_path = f"{os.getcwd()}\\{self.config_file}"
+            
         elif platform.system() == 'Linux':
-            print(f'System LINUX is not supported yet!')
-            os._exit(0)
+            self.config_path = f"{os.getcwd()}/{self.config_file}"
         else:
             print(f'Your system is not supported!')
             os._exit(0)
+            
+        if os.path.exists(self.config_path) is False:
+            self.create_example()
+            print(f'Could not find {self.config_file}! New config has been created.')
 
     def create_example(self) -> bool:
         """
